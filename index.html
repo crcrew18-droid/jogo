@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FPS Pipa Realista - Tibau do Sul</title>
+    <title>CS Pipa - Operação Realista</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background-color: #000;
-            font-family: Arial, sans-serif;
+            background-color: #050505;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
         }
         #hud {
@@ -23,33 +23,56 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 20px;
+            padding: 25px;
             box-sizing: border-box;
         }
         .hud-top {
             display: flex;
             justify-content: space-between;
-            color: white;
+            color: #fff;
+            font-size: 22px;
+            font-weight: 800;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.9);
+            letter-spacing: 1px;
+        }
+        .hud-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            color: #fff;
             font-size: 20px;
             font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        .health-bar-container {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #555;
+            width: 250px;
+            height: 22px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .health-bar {
+            width: 100%;
+            height: 100%;
+            background: #22c55e;
+            transition: width 0.2s ease;
         }
         .crosshair {
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             transform: translate(-50%, -50%);
-            border: 2px solid rgba(255, 255, 255, 0.7);
+            border: 2px solid rgba(0, 255, 100, 0.9);
             border-radius: 50%;
             pointer-events: none;
-            transition: width 0.1s, height: 0.1s;
+            transition: all 0.1s;
         }
         .crosshair.ads {
-            width: 4px;
-            height: 4px;
-            border-color: #ff3333;
+            width: 3px;
+            height: 3px;
+            border-color: #ef4444;
         }
         #instruction-screen {
             position: absolute;
@@ -57,7 +80,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.85);
+            background: linear-gradient(135deg, rgba(10,10,12,0.95), rgba(25,25,35,0.95));
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -69,62 +92,93 @@
         }
         #instruction-screen h1 {
             color: #38bdf8;
-            margin-bottom: 10px;
-            font-size: 32px;
+            margin-bottom: 5px;
+            font-size: 38px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        #instruction-screen h3 {
+            color: #facc15;
+            margin-bottom: 20px;
+            font-weight: 400;
         }
         #instruction-screen p {
             font-size: 16px;
-            color: #cbd5e1;
-            max-width: 500px;
-            line-height: 1.5;
-            margin-bottom: 25px;
+            color: #94a3b8;
+            max-width: 550px;
+            line-height: 1.6;
+            margin-bottom: 30px;
         }
         .btn-play {
-            background-color: #eab308;
-            color: #000;
+            background: linear-gradient(to bottom, #f59e0b, #d97706);
+            color: #fff;
             font-size: 18px;
-            font-weight: bold;
-            padding: 12px 30px;
+            font-weight: 800;
+            padding: 14px 35px;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(234, 179, 8, 0.4);
-            transition: transform 0.2s, background-color 0.2s;
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+            text-transform: uppercase;
+            transition: transform 0.1s, background 0.2s;
         }
         .btn-play:hover {
-            background-color: #ca8a04;
-            transform: scale(1.05);
+            transform: scale(1.04);
+            background: linear-gradient(to bottom, #fbbf24, #b45309);
         }
-        #reload-msg {
+        #reload-msg, #hit-overlay {
             position: absolute;
-            bottom: 30%;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
-            color: #ffcc00;
-            font-size: 18px;
+            transform: translate(-50%, -50%);
             font-weight: bold;
             display: none;
-            text-shadow: 1px 1px 2px black;
+            pointer-events: none;
+        }
+        #reload-msg {
+            color: #facc15;
+            font-size: 20px;
+            text-shadow: 2px 2px 4px #000;
+            top: 60%;
+        }
+        #hit-overlay {
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 0, 0, 0);
+            transition: background 0.1s;
         }
     </style>
 </head>
 <body>
 
+    <div id="hit-overlay"></div>
+
     <div id="instruction-screen">
-        <h1>🌴 Operação Pipa (Versão Realista) 🌊</h1>
-        <p>Use <b>W, A, S, D</b> para andar, <b>MOUSE</b> para olhar, <b>BOTÃO DIREITO</b> para mirar (ADS), <b>ESPAÇO</b> para pular e <b>R</b> para recarregar.</p>
-        <button class="btn-play" id="play-btn">ENTRAR NO JOGO</button>
+        <h1>CS: Pipa Tactical</h1>
+        <h3>Tibau do Sul - Edição Realista</h3>
+        <p>Elimine os inimigos terroristas antes que eles te alcancem! Use <b>W, A, S, D</b> para movimentação tática, <b>MOUSE</b> para olhar ao redor, <b>BOTÃO DIREITO</b> para mirar (ADS), <b>ESPAÇO</b> para saltar e <b>R</b> para recarregar a arma.</p>
+        <button class="btn-play" id="play-btn">INICIAR MISSÃO</button>
     </div>
 
     <div id="hud">
         <div class="hud-top">
-            <div>📍 PIPA / RUA REALISTA</div>
-            <div>ALVOS ELIMINADOS: <span id="score">0</span></div>
-            <div>MUNIÇÃO: <span id="ammo">30</span>/30</div>
+            <div>📍 MAPA: VILA DE PIPA</div>
+            <div>ELIMINAÇÕES: <span id="score">0</span></div>
+        </div>
+        <div class="hud-bottom">
+            <div>
+                <div style="font-size: 12px; margin-bottom: 5px; color: #aaa;">SAÚDE TÁTICA</div>
+                <div class="health-bar-container">
+                    <div class="health-bar" id="health-bar"></div>
+                </div>
+            </div>
+            <div style="font-size: 28px; font-weight: 900; text-shadow: 2px 2px 4px #000;">
+                <span id="ammo">30</span> / <span style="font-size: 18px; color: #888;">30</span>
+            </div>
         </div>
     </div>
 
-    <div id="reload-msg">RECARREGANDO... (Pressione R)</div>
+    <div id="reload-msg">RECARREGANDO CARREGADOR...</div>
     <div class="crosshair" id="crosshair"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -141,10 +195,11 @@
         let score = 0;
         let ammo = 30;
         let maxAmmo = 30;
+        let playerHealth = 100;
         let isReloading = false;
         let isAds = false;
         let gunGroup, muzzleFlashLight;
-        let bots = [];
+        let enemies = [];
         let audioCtx;
 
         init();
@@ -152,11 +207,11 @@
 
         function init() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x2869a8); // Céu realista mais profundo
-            scene.fog = new THREE.FogExp2(0x2869a8, 0.015);
+            scene.background = new THREE.Color(0x1e3a5f); // Céu tático profundo
+            scene.fog = new THREE.FogExp2(0x1e3a5f, 0.012);
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 1.6, 10);
+            camera.position.set(0, 1.6, 12);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -178,60 +233,63 @@
                 document.getElementById('instruction-screen').style.display = 'flex';
             });
 
-            // Luzes realistas
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            // Iluminação Estilo CS (Sol forte e luzes rebatidas)
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
             scene.add(ambientLight);
 
-            const sunLight = new THREE.DirectionalLight(0xfffaed, 1.5);
-            sunLight.position.set(40, 60, 40);
+            const sunLight = new THREE.DirectionalLight(0xfffaed, 1.4);
+            sunLight.position.set(50, 70, 30);
             sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
             scene.add(sunLight);
 
-            // Carregador de Texturas para realismo
+            // Texturas Realistas via URL
             const textureLoader = new THREE.TextureLoader();
-
-            // Textura de Rua / Paralelepípedo Realista
-            const streetTex = textureLoader.load('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600');
+            
+            // Rua com asfalto / paralelepípedo realista
+            const streetTex = textureLoader.load('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800');
             streetTex.wrapS = THREE.RepeatWrapping;
             streetTex.wrapT = THREE.RepeatWrapping;
-            streetTex.repeat.set(5, 30);
+            streetTex.repeat.set(4, 25);
             
-            const streetGeo = new THREE.PlaneGeometry(35, 180);
-            const streetMat = new THREE.MeshStandardMaterial({ map: streetTex, roughness: 0.8 });
-            const street = new THREE.Mesh(streetGeo, streetMat);
+            const street = new THREE.Mesh(
+                new THREE.PlaneGeometry(35, 180),
+                new THREE.MeshStandardMaterial({ map: streetTex, roughness: 0.7 })
+            );
             street.rotation.x = -Math.PI / 2;
             street.receiveShadow = true;
             scene.add(street);
 
-            // Calçadas
-            const sidewalkGeo = new THREE.PlaneGeometry(30, 180);
-            const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0xc2a685, roughness: 0.9 });
-            
-            const sidewalkLeft = new THREE.Mesh(sidewalkGeo, sidewalkMat);
-            sidewalkLeft.position.set(-32.5, -0.02, 0);
-            sidewalkLeft.rotation.x = -Math.PI / 2;
-            scene.add(sidewalkLeft);
+            // Calçadas laterais
+            const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.9 });
+            const sLeft = new THREE.Mesh(new THREE.PlaneGeometry(30, 180), sidewalkMat);
+            sLeft.position.set(-32.5, -0.01, 0);
+            sLeft.rotation.x = -Math.PI / 2;
+            scene.add(sLeft);
 
-            const sidewalkRight = new THREE.Mesh(sidewalkGeo, sidewalkMat);
-            sidewalkRight.position.set(32.5, -0.02, 0);
-            sidewalkRight.rotation.x = -Math.PI / 2;
-            scene.add(sidewalkRight);
+            const sRight = new THREE.Mesh(new THREE.PlaneGeometry(30, 180), sidewalkMat);
+            sRight.position.set(32.5, -0.01, 0);
+            sRight.rotation.x = -Math.PI / 2;
+            scene.add(sRight);
 
-            // Texturas de Lojinhas / Paredes Realistas (Estucadas e de Tijolo)
-            const wallTex1 = textureLoader.load('https://images.unsplash.com/photo-1558442084-fa637f1b11ef?w=600');
-            const wallTex2 = textureLoader.load('https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600');
-
+            // Prédios / Lojinhas coloridas das laterais
+            const wallTex = textureLoader.load('https://images.unsplash.com/photo-1558442084-fa637f1b11ef?w=600');
             for (let i = -70; i <= 70; i += 18) {
-                let matL = new THREE.MeshStandardMaterial({ map: wallTex1, roughness: 0.5 });
-                let houseL = new THREE.Mesh(new THREE.BoxGeometry(12, 10, 15), matL);
-                houseL.position.set(-23, 5, i);
+                let houseL = new THREE.Mesh(
+                    new THREE.BoxGeometry(12, 11, 15),
+                    new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.5 })
+                );
+                houseL.position.set(-23, 5.5, i);
                 houseL.castShadow = true;
                 houseL.receiveShadow = true;
                 scene.add(houseL);
 
-                let matR = new THREE.MeshStandardMaterial({ map: wallTex2, roughness: 0.5 });
-                let houseR = new THREE.Mesh(new THREE.BoxGeometry(12, 10, 15), matR);
-                houseR.position.set(23, 5, i);
+                let houseR = new THREE.Mesh(
+                    new THREE.BoxGeometry(12, 11, 15),
+                    new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.5 })
+                );
+                houseR.position.set(23, 5.5, i);
                 houseR.castShadow = true;
                 houseR.receiveShadow = true;
                 scene.add(houseR);
@@ -239,7 +297,7 @@
 
             createObstacles();
             createWeapon();
-            spawnBots();
+            spawnEnemies();
 
             window.addEventListener('keydown', onKeyDown);
             window.addEventListener('keyup', onKeyUp);
@@ -249,17 +307,17 @@
         }
 
         function createObstacles() {
-            const obsMat = new THREE.MeshStandardMaterial({ color: 0x4a3319, roughness: 0.6 });
-            const obstaclesData = [
+            const obsMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4, metalness: 0.3 });
+            const obstacles = [
                 { x: -6, z: -15, w: 4, h: 3, d: 4 },
                 { x: 6, z: -30, w: 5, h: 3.5, d: 3 },
                 { x: -4, z: -45, w: 3.5, h: 4, d: 5 },
-                { x: 5, z: -60, w: 5, h: 3, d: 5 }
+                { x: 5, z: -60, w: 6, h: 3.5, d: 4 }
             ];
 
-            obstaclesData.forEach(data => {
-                const mesh = new THREE.Mesh(new THREE.BoxGeometry(data.w, data.h, data.d), obsMat);
-                mesh.position.set(data.x, data.h / 2, data.z);
+            obstacles.forEach(o => {
+                let mesh = new THREE.Mesh(new THREE.BoxGeometry(o.w, o.h, o.d), obsMat);
+                mesh.position.set(o.x, o.h / 2, o.z);
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
                 scene.add(mesh);
@@ -269,18 +327,24 @@
         function createWeapon() {
             gunGroup = new THREE.Group();
             
-            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.6, roughness: 0.3 });
-            const gunBody = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.16, 0.85), bodyMat);
-            gunBody.position.set(0.2, -0.2, -0.5);
-            gunGroup.add(gunBody);
+            // Corpo do Rifle tático
+            const body = new THREE.Mesh(
+                new THREE.BoxGeometry(0.13, 0.15, 0.8),
+                new THREE.MeshStandardMaterial({ color: 0x111, metalness: 0.8, roughness: 0.2 })
+            );
+            body.position.set(0.2, -0.2, -0.45);
+            gunGroup.add(body);
 
-            const barrelMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9, roughness: 0.2 });
-            const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.55), barrelMat);
+            // Cano
+            const barrel = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.025, 0.025, 0.5),
+                new THREE.MeshStandardMaterial({ color: 0x222, metalness: 0.9 })
+            );
             barrel.rotation.x = Math.PI / 2;
-            barrel.position.set(0.2, -0.15, -0.85);
+            barrel.position.set(0.2, -0.15, -0.8);
             gunGroup.add(barrel);
 
-            muzzleFlashLight = new THREE.PointLight(0xff9900, 0, 3);
+            muzzleFlashLight = new THREE.PointLight(0xffaa00, 0, 3);
             muzzleFlashLight.position.set(0.2, -0.15, -1.1);
             gunGroup.add(muzzleFlashLight);
 
@@ -288,62 +352,58 @@
             scene.add(camera);
         }
 
-        function spawnBots() {
-            const botGeo = new THREE.BoxGeometry(1.2, 2.2, 1.2);
-            const botMat = new THREE.MeshStandardMaterial({ color: 0xcc3333, roughness: 0.4 });
-
-            for (let i = 0; i < 5; i++) {
-                const bot = new THREE.Mesh(botGeo, botMat);
-                const x = (Math.random() - 0.5) * 20;
-                const z = -20 - (i * 15);
-                bot.position.set(x, 1.1, z);
-                bot.castShadow = true;
-                bot.userData = { health: 100, maxHealth: 100 };
-                scene.add(bot);
-                bots.push(bot);
+        function spawnEnemies() {
+            const botGeo = new THREE.BoxGeometry(1.2, 2.3, 1.2);
+            
+            for (let i = 0; i < 4; i++) {
+                // Inimigos com uniforme tático avermelhado
+                const botMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.4 });
+                const enemy = new THREE.Mesh(botGeo, botMat);
+                
+                let x = (Math.random() - 0.5) * 20;
+                let z = -30 - (i * 18);
+                enemy.position.set(x, 1.15, z);
+                enemy.castShadow = true;
+                enemy.userData = { health: 100, lastShot: 0 };
+                
+                scene.add(enemy);
+                enemies.push(enemy);
             }
         }
 
-        function onKeyDown(event) {
-            switch (event.code) {
-                case 'KeyW': moveForward = true; break;
-                case 'KeyS': moveBackward = true; break;
-                case 'KeyA': moveLeft = true; break;
-                case 'KeyD': moveRight = true; break;
-                case 'Space':
-                    if (canJump) velocity.y += 8;
-                    canJump = false;
-                    break;
-                case 'KeyR': reloadWeapon(); break;
-            }
+        function onKeyDown(e) {
+            if (e.code === 'KeyW') moveForward = true;
+            if (e.code === 'KeyS') moveBackward = true;
+            if (e.code === 'KeyA') moveLeft = true;
+            if (e.code === 'KeyD') moveRight = true;
+            if (e.code === 'Space' && canJump) { velocity.y += 8; canJump = false; }
+            if (e.code === 'KeyR') reloadWeapon();
         }
 
-        function onKeyUp(event) {
-            switch (event.code) {
-                case 'KeyW': moveForward = false; break;
-                case 'KeyS': moveBackward = false; break;
-                case 'KeyA': moveLeft = false; break;
-                case 'KeyD': moveRight = false; break;
-            }
+        function onKeyUp(e) {
+            if (e.code === 'KeyW') moveForward = false;
+            if (e.code === 'KeyS') moveBackward = false;
+            if (e.code === 'KeyA') moveLeft = false;
+            if (e.code === 'KeyD') moveRight = false;
         }
 
-        function onMouseDown(event) {
+        function onMouseDown(e) {
             if (!controls.isLocked) return;
-            if (event.button === 0) shoot();
-            if (event.button === 2) toggleADS(true);
+            if (e.button === 0) shoot();
+            if (e.button === 2) toggleADS(true);
         }
 
-        function onMouseUp(event) {
-            if (event.button === 2) toggleADS(false);
+        function onMouseUp(e) {
+            if (e.button === 2) toggleADS(false);
         }
 
         function toggleADS(enable) {
             isAds = enable;
             const crosshair = document.getElementById('crosshair');
             if (enable) {
-                camera.fov = 40;
+                camera.fov = 35;
                 crosshair.classList.add('ads');
-                gunGroup.position.set(-0.05, 0.05, 0.15);
+                gunGroup.position.set(-0.06, 0.04, 0.1);
             } else {
                 camera.fov = 75;
                 crosshair.classList.remove('ads');
@@ -359,27 +419,28 @@
             document.getElementById('ammo').innerText = ammo;
             playGunshotSound();
 
-            gunGroup.position.z += 0.08;
-            muzzleFlashLight.intensity = 4;
+            gunGroup.position.z += 0.07;
+            muzzleFlashLight.intensity = 5;
             setTimeout(() => {
-                gunGroup.position.z -= 0.08;
+                gunGroup.position.z -= 0.07;
                 muzzleFlashLight.intensity = 0;
-            }, 60);
+            }, 50);
 
             const raycaster = new THREE.Raycaster();
             raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-            const intersects = raycaster.intersectObjects(bots);
+            const intersects = raycaster.intersectObjects(enemies);
 
             if (intersects.length > 0) {
-                const hitBot = intersects[0].object;
-                hitBot.userData.health -= 50;
-                hitBot.material.color.setHex(0xffffff);
-                setTimeout(() => hitBot.material.color.setHex(0xcc3333), 150);
+                const hitEnemy = intersects[0].object;
+                hitEnemy.userData.health -= 50; // 2 tiros eliminam
+                
+                hitEnemy.material.color.setHex(0xffffff);
+                setTimeout(() => hitEnemy.material.color.setHex(0x991b1b), 120);
 
-                if (hitBot.userData.health <= 0) {
+                if (hitEnemy.userData.health <= 0) {
                     score++;
                     document.getElementById('score').innerText = score;
-                    respawnBot(hitBot);
+                    respawnEnemy(hitEnemy);
                 }
             }
 
@@ -398,10 +459,25 @@
             }, 1200);
         }
 
-        function respawnBot(bot) {
-            bot.userData.health = bot.userData.maxHealth;
-            bot.position.z = -70 - Math.random() * 30;
-            bot.position.x = (Math.random() - 0.5) * 22;
+        function respawnEnemy(enemy) {
+            enemy.userData.health = 100;
+            enemy.position.z = -70 - Math.random() * 30;
+            enemy.position.x = (Math.random() - 0.5) * 22;
+        }
+
+        function damagePlayer() {
+            playerHealth -= 15;
+            document.getElementById('health-bar').style.width = playerHealth + '%';
+            
+            // Flash vermelho na tela quando toma tiro
+            const overlay = document.getElementById('hit-overlay');
+            overlay.style.background = 'rgba(255, 0, 0, 0.35)';
+            setTimeout(() => overlay.style.background = 'rgba(255, 0, 0, 0)', 150);
+
+            if (playerHealth <= 0) {
+                alert('VOCÊ FOI ELIMINADO! Reiniciando partida...');
+                location.reload();
+            }
         }
 
         function playGunshotSound() {
@@ -411,14 +487,14 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(320, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.15);
-            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            osc.frequency.setValueAtTime(280, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.12);
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.15);
+            osc.stop(audioCtx.currentTime + 0.12);
         }
 
         function onWindowResize() {
@@ -442,7 +518,7 @@
                 direction.x = Number(moveRight) - Number(moveLeft);
                 direction.normalize();
 
-                const speed = isAds ? 6.0 : 12.0;
+                const speed = isAds ? 5.5 : 11.0;
 
                 if (moveForward || moveBackward) velocity.z -= direction.z * speed * 8.0 * delta;
                 if (moveLeft || moveRight) velocity.x -= direction.x * speed * 8.0 * delta;
@@ -458,9 +534,24 @@
                     canJump = true;
                 }
 
-                bots.forEach(bot => {
-                    bot.position.z += 4.0 * delta;
-                    if (bot.position.z > camera.position.z + 5) respawnBot(bot);
+                // Inteligência dos Inimigos: Avançam e causam dano ao chegar perto
+                enemies.forEach(enemy => {
+                    enemy.position.z += 4.5 * delta;
+
+                    // Se o inimigo alcançar o jogador, causa dano contínuo
+                    let distanceToPlayer = enemy.position.distanceTo(camera.position);
+                    if (distanceToPlayer < 4.0) {
+                        let now = Date.now();
+                        if (now - enemy.userData.lastShot > 1000) {
+                            damagePlayer();
+                            enemy.userData.lastShot = now;
+                        }
+                    }
+
+                    // Se passar muito, dá respawn lá na frente
+                    if (enemy.position.z > camera.position.z + 3) {
+                        respawnEnemy(enemy);
+                    }
                 });
             }
 
