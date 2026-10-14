@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FPS Pipa - Tibau do Sul</title>
+    <title>FPS Pipa Realista - Tibau do Sul</title>
     <style>
         body {
             margin: 0;
@@ -111,14 +111,14 @@
 <body>
 
     <div id="instruction-screen">
-        <h1>🌴 Operação Pipa - Tibau do Sul 🌊</h1>
-        <p>Defenda a charmosa Avenida Baía dos Golfinhos! Use <b>W, A, S, D</b> para andar, <b>MOUSE</b> para mirar e atirar, <b>BOTÃO DIREITO</b> para mirar com a arma (ADS), <b>ESPAÇO</b> para pular e <b>R</b> para recarregar.</p>
+        <h1>🌴 Operação Pipa (Versão Realista) 🌊</h1>
+        <p>Use <b>W, A, S, D</b> para andar, <b>MOUSE</b> para olhar, <b>BOTÃO DIREITO</b> para mirar (ADS), <b>ESPAÇO</b> para pular e <b>R</b> para recarregar.</p>
         <button class="btn-play" id="play-btn">ENTRAR NO JOGO</button>
     </div>
 
     <div id="hud">
         <div class="hud-top">
-            <div>📍 PIPA / CENTRINHO</div>
+            <div>📍 PIPA / RUA REALISTA</div>
             <div>ALVOS ELIMINADOS: <span id="score">0</span></div>
             <div>MUNIÇÃO: <span id="ammo">30</span>/30</div>
         </div>
@@ -127,7 +127,6 @@
     <div id="reload-msg">RECARREGANDO... (Pressione R)</div>
     <div class="crosshair" id="crosshair"></div>
 
-    <!-- Importando Three.js e PointerLockControls via CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
 
@@ -144,7 +143,7 @@
         let maxAmmo = 30;
         let isReloading = false;
         let isAds = false;
-        let gunGroup, gunMesh, muzzleFlashLight;
+        let gunGroup, muzzleFlashLight;
         let bots = [];
         let audioCtx;
 
@@ -152,10 +151,9 @@
         animate();
 
         function init() {
-            // Cena e Câmera
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x38bdf8); // Céu ensolarado litoral
-            scene.fog = new THREE.FogExp2(0x38bdf8, 0.012);
+            scene.background = new THREE.Color(0x2869a8); // Céu realista mais profundo
+            scene.fog = new THREE.FogExp2(0x2869a8, 0.015);
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.set(0, 1.6, 10);
@@ -166,11 +164,9 @@
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             document.body.appendChild(renderer.domElement);
 
-            // Controles de Primeira Pessoa
             controls = new THREE.PointerLockControls(camera, document.body);
 
-            const playBtn = document.getElementById('play-btn');
-            playBtn.addEventListener('click', () => {
+            document.getElementById('play-btn').addEventListener('click', () => {
                 controls.lock();
             });
 
@@ -182,30 +178,34 @@
                 document.getElementById('instruction-screen').style.display = 'flex';
             });
 
-            // Luzes
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            // Luzes realistas
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
             scene.add(ambientLight);
 
-            const sunLight = new THREE.DirectionalLight(0xfff5e6, 1.2);
-            sunLight.position.set(30, 50, 30);
+            const sunLight = new THREE.DirectionalLight(0xfffaed, 1.5);
+            sunLight.position.set(40, 60, 40);
             sunLight.castShadow = true;
-            sunLight.shadow.mapSize.width = 2048;
-            sunLight.shadow.mapSize.height = 2048;
             scene.add(sunLight);
 
-            // --- MAPA: AVENIDA BAÍA DOS GOLFINHOS (Pipa / RN) ---
+            // Carregador de Texturas para realismo
+            const textureLoader = new THREE.TextureLoader();
+
+            // Textura de Rua / Paralelepípedo Realista
+            const streetTex = textureLoader.load('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600');
+            streetTex.wrapS = THREE.RepeatWrapping;
+            streetTex.wrapT = THREE.RepeatWrapping;
+            streetTex.repeat.set(5, 30);
             
-            // 1. Chão da Rua Principal (Paralelepípedo / terra batida envelhecida)
             const streetGeo = new THREE.PlaneGeometry(35, 180);
-            const streetMat = new THREE.MeshStandardMaterial({ color: 0x7a6b5d, roughness: 0.9 });
+            const streetMat = new THREE.MeshStandardMaterial({ map: streetTex, roughness: 0.8 });
             const street = new THREE.Mesh(streetGeo, streetMat);
             street.rotation.x = -Math.PI / 2;
             street.receiveShadow = true;
             scene.add(street);
 
-            // Calçadas laterais
+            // Calçadas
             const sidewalkGeo = new THREE.PlaneGeometry(30, 180);
-            const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0xd4b595, roughness: 1.0 });
+            const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0xc2a685, roughness: 0.9 });
             
             const sidewalkLeft = new THREE.Mesh(sidewalkGeo, sidewalkMat);
             sidewalkLeft.position.set(-32.5, -0.02, 0);
@@ -217,36 +217,30 @@
             sidewalkRight.rotation.x = -Math.PI / 2;
             scene.add(sidewalkRight);
 
-            // 2. Casinhas e Lojinhas Coloridas nas Laterais (Estilo Centrinho de Pipa)
-            const wallColors = [0xffffff, 0x00bcd4, 0xffeb3b, 0xd32f2f, 0x2e7d32, 0xff9800];
+            // Texturas de Lojinhas / Paredes Realistas (Estucadas e de Tijolo)
+            const wallTex1 = textureLoader.load('https://images.unsplash.com/photo-1558442084-fa637f1b11ef?w=600');
+            const wallTex2 = textureLoader.load('https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600');
+
             for (let i = -70; i <= 70; i += 18) {
-                // Esquerda
-                let matL = new THREE.MeshStandardMaterial({ color: wallColors[Math.floor(Math.random() * wallColors.length)], roughness: 0.6 });
-                let houseL = new THREE.Mesh(new THREE.BoxGeometry(12, 9, 15), matL);
-                houseL.position.set(-23, 4.5, i);
+                let matL = new THREE.MeshStandardMaterial({ map: wallTex1, roughness: 0.5 });
+                let houseL = new THREE.Mesh(new THREE.BoxGeometry(12, 10, 15), matL);
+                houseL.position.set(-23, 5, i);
                 houseL.castShadow = true;
                 houseL.receiveShadow = true;
                 scene.add(houseL);
 
-                // Direita
-                let matR = new THREE.MeshStandardMaterial({ color: wallColors[Math.floor(Math.random() * wallColors.length)], roughness: 0.6 });
-                let houseR = new THREE.Mesh(new THREE.BoxGeometry(12, 9, 15), matR);
-                houseR.position.set(23, 4.5, i);
+                let matR = new THREE.MeshStandardMaterial({ map: wallTex2, roughness: 0.5 });
+                let houseR = new THREE.Mesh(new THREE.BoxGeometry(12, 10, 15), matR);
+                houseR.position.set(23, 5, i);
                 houseR.castShadow = true;
                 houseR.receiveShadow = true;
                 scene.add(houseR);
             }
 
-            // 3. Obstáculos na Rua (Quiosques e Barreiras)
             createObstacles();
-
-            // Criar Arma na Visão da Câmera
             createWeapon();
-
-            // Gerar Bots Inimigos de Treino
             spawnBots();
 
-            // Eventos de Teclado e Mouse
             window.addEventListener('keydown', onKeyDown);
             window.addEventListener('keyup', onKeyUp);
             window.addEventListener('mousedown', onMouseDown);
@@ -255,13 +249,12 @@
         }
 
         function createObstacles() {
-            const obsMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.7 });
+            const obsMat = new THREE.MeshStandardMaterial({ color: 0x4a3319, roughness: 0.6 });
             const obstaclesData = [
                 { x: -6, z: -15, w: 4, h: 3, d: 4 },
                 { x: 6, z: -30, w: 5, h: 3.5, d: 3 },
                 { x: -4, z: -45, w: 3.5, h: 4, d: 5 },
-                { x: 5, z: -60, w: 5, h: 3, d: 5 },
-                { x: 0, z: -75, w: 6, h: 4, d: 4 }
+                { x: 5, z: -60, w: 5, h: 3, d: 5 }
             ];
 
             obstaclesData.forEach(data => {
@@ -276,22 +269,19 @@
         function createWeapon() {
             gunGroup = new THREE.Group();
             
-            // Corpo do Rifle
-            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.4 });
-            const gunBody = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.18, 0.9), bodyMat);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.6, roughness: 0.3 });
+            const gunBody = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.16, 0.85), bodyMat);
             gunBody.position.set(0.2, -0.2, -0.5);
             gunGroup.add(gunBody);
 
-            // Cano da Arma
-            const barrelMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8 });
-            const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.6), barrelMat);
+            const barrelMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9, roughness: 0.2 });
+            const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.55), barrelMat);
             barrel.rotation.x = Math.PI / 2;
-            barrel.position.set(0.2, -0.15, -0.9);
+            barrel.position.set(0.2, -0.15, -0.85);
             gunGroup.add(barrel);
 
-            // Luz do Muzzle Flash (Disparo)
-            muzzleFlashLight = new THREE.PointLight(0xffaa00, 0, 3);
-            muzzleFlashLight.position.set(0.2, -0.15, -1.2);
+            muzzleFlashLight = new THREE.PointLight(0xff9900, 0, 3);
+            muzzleFlashLight.position.set(0.2, -0.15, -1.1);
             gunGroup.add(muzzleFlashLight);
 
             camera.add(gunGroup);
@@ -300,7 +290,7 @@
 
         function spawnBots() {
             const botGeo = new THREE.BoxGeometry(1.2, 2.2, 1.2);
-            const botMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.5 }); // Turista / Alvo
+            const botMat = new THREE.MeshStandardMaterial({ color: 0xcc3333, roughness: 0.4 });
 
             for (let i = 0; i < 5; i++) {
                 const bot = new THREE.Mesh(botGeo, botMat);
@@ -308,7 +298,7 @@
                 const z = -20 - (i * 15);
                 bot.position.set(x, 1.1, z);
                 bot.castShadow = true;
-                bot.userData = { health: 100, maxHealth: 100, originalX: x };
+                bot.userData = { health: 100, maxHealth: 100 };
                 scene.add(bot);
                 bots.push(bot);
             }
@@ -324,9 +314,7 @@
                     if (canJump) velocity.y += 8;
                     canJump = false;
                     break;
-                case 'KeyR':
-                    reloadWeapon();
-                    break;
+                case 'KeyR': reloadWeapon(); break;
             }
         }
 
@@ -341,29 +329,23 @@
 
         function onMouseDown(event) {
             if (!controls.isLocked) return;
-
-            if (event.button === 0) { // Clique Esquerdo: Atirar
-                shoot();
-            } else if (event.button === 2) { // Clique Direito: Mirar (ADS)
-                toggleADS(true);
-            }
+            if (event.button === 0) shoot();
+            if (event.button === 2) toggleADS(true);
         }
 
         function onMouseUp(event) {
-            if (event.button === 2) {
-                toggleADS(false);
-            }
+            if (event.button === 2) toggleADS(false);
         }
 
         function toggleADS(enable) {
             isAds = enable;
             const crosshair = document.getElementById('crosshair');
             if (enable) {
-                camera.fov = 40; // Zoom in
+                camera.fov = 40;
                 crosshair.classList.add('ads');
-                gunGroup.position.set(-0.05, 0.05, 0.2); // Centraliza a arma
+                gunGroup.position.set(-0.05, 0.05, 0.15);
             } else {
-                camera.fov = 75; // Zoom out normal
+                camera.fov = 75;
                 crosshair.classList.remove('ads');
                 gunGroup.position.set(0, 0, 0);
             }
@@ -375,33 +357,24 @@
 
             ammo--;
             document.getElementById('ammo').innerText = ammo;
-
             playGunshotSound();
 
-            // Efeito visual de recuo e flash
             gunGroup.position.z += 0.08;
-            muzzleFlashLight.intensity = 3;
+            muzzleFlashLight.intensity = 4;
             setTimeout(() => {
                 gunGroup.position.z -= 0.08;
                 muzzleFlashLight.intensity = 0;
             }, 60);
 
-            // Raycaster para detectar acertos nos alvos
             const raycaster = new THREE.Raycaster();
-            const center = new THREE.Vector2(0, 0);
-            raycaster.setFromCamera(center, camera);
-
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
             const intersects = raycaster.intersectObjects(bots);
 
             if (intersects.length > 0) {
                 const hitBot = intersects[0].object;
-                hitBot.userData.health -= 50; // 2 tiros para derrubar
-
-                // Piscar o bot de vermelho ao tomar tiro
-                hitBot.material.color.setHex(0xff0000);
-                setTimeout(() => {
-                    hitBot.material.color.setHex(0xd97706);
-                }, 150);
+                hitBot.userData.health -= 50;
+                hitBot.material.color.setHex(0xffffff);
+                setTimeout(() => hitBot.material.color.setHex(0xcc3333), 150);
 
                 if (hitBot.userData.health <= 0) {
                     score++;
@@ -410,26 +383,19 @@
                 }
             }
 
-            if (ammo === 0) {
-                document.getElementById('reload-msg').style.display = 'block';
-            }
+            if (ammo === 0) document.getElementById('reload-msg').style.display = 'block';
         }
 
         function reloadWeapon() {
             if (isReloading || ammo === maxAmmo) return;
-            isReloading = consagrarRecarga();
-        }
-
-        function consagrarRecarga() {
-            document.getElementById('reload-msg').style.display = 'block';
             isReloading = true;
+            document.getElementById('reload-msg').style.display = 'block';
             setTimeout(() => {
                 ammo = maxAmmo;
                 isReloading = false;
                 document.getElementById('ammo').innerText = ammo;
                 document.getElementById('reload-msg').style.display = 'none';
             }, 1200);
-            return true;
         }
 
         function respawnBot(bot) {
@@ -438,28 +404,19 @@
             bot.position.x = (Math.random() - 0.5) * 22;
         }
 
-        // Sistema de Áudio Sinterizado via Web Audio API (Sem arquivos externos!)
         function playGunshotSound() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
 
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            
             osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.15);
-
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(320, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-
             osc.start();
             osc.stop(audioCtx.currentTime + 0.15);
         }
@@ -479,7 +436,7 @@
             if (controls.isLocked) {
                 velocity.x -= velocity.x * 10.0 * delta;
                 velocity.z -= velocity.z * 10.0 * delta;
-                velocity.y -= 9.8 * 4.0 * delta; // Gravidade
+                velocity.y -= 9.8 * 4.0 * delta;
 
                 direction.z = Number(moveForward) - Number(moveBackward);
                 direction.x = Number(moveRight) - Number(moveLeft);
@@ -501,12 +458,9 @@
                     canJump = true;
                 }
 
-                // Movimentação automática suave dos bots em direção ao jogador
                 bots.forEach(bot => {
-                    bot.position.z += 3.5 * delta;
-                    if (bot.position.z > camera.position.z + 5) {
-                        respawnBot(bot);
-                    }
+                    bot.position.z += 4.0 * delta;
+                    if (bot.position.z > camera.position.z + 5) respawnBot(bot);
                 });
             }
 
